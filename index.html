@@ -1,239 +1,417 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tool Inventory System</title>
-    <style>
-        :root { --primary: #2563eb; --bg: #f3f4f6; --text: #1f2937; --white: #ffffff; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        h1 { margin: 0; color: var(--primary); }
-        .card { background: var(--white); padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
-        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        button:hover { opacity: 0.9; }
-        button.delete { background: #ef4444; padding: 5px 10px; font-size: 0.8rem; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; }
-        th { background: #f9fafb; font-weight: 600; }
-        .status { padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
-        .status.available { background: #d1fae5; color: #065f46; }
-        .status.checked-out { background: #fee2e2; color: #991b1b; }
-        .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
-        .search-bar input { flex: 1; }
-        .stats { display: flex; gap: 20px; margin-bottom: 20px; }
-        .stat-box { background: white; padding: 15px; border-radius: 8px; flex: 1; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .stat-number { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Tool & Member Inventory</title>
+
+<style>
+:root { --primary:#2563eb; --secondary:#4f46e5; --bg:#f3f4f6; --white:#ffffff; --danger:#ef4444; --success:#10b981;}
+body{font-family:Segoe UI;background:var(--bg);margin:0;padding:20px}
+.container{max-width:1200px;margin:auto}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.tabs{ display:flex;gap:10px;margin-bottom:20px}
+.tab{color: black; padding:10px 20px;background:white;border:none;border-radius:8px;cursor:pointer;font-weight:600}
+.tab.active{background:var(--primary);color:white}
+.card{background:white;padding:20px;border-radius:8px;margin-bottom:20px}
+input,select{width:100%;padding:10px;margin-top:5px;margin-bottom:10px;border:1px solid #ddd;border-radius:6px}
+button{background:var(--primary);color:white;border:none;padding:10px 15px;border-radius:6px;cursor:pointer}
+button.danger{background:var(--danger)}
+button.secondary{background:var(--secondary)}
+.stats{display:flex;gap:20px;margin-bottom:20px}
+.stat-box{flex:1;background:white;padding:15px;border-radius:8px;text-align:center}
+.stat-number{font-size:1.5rem;font-weight:bold;color:var(--primary)}
+.hidden{display:none}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
+</style>
+
 </head>
+
 <body>
 
 <div class="container">
-    <div class="header">
-        <h1>🛠️ Tool Inventory System</h1>
-        <button onclick="exportToCSV()">Export to CSV</button>
-    </div>
 
-    <!-- Statistics -->
-    <div class="stats">
-        <div class="stat-box">
-            <div class="stat-number" id="total-tools">0</div>
-            <div>Total Tools</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-number" id="checked-out">0</div>
-            <div>Checked Out</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-number" id="available">0</div>
-            <div>Available</div>
-        </div>
-    </div>
-
-    <!-- Add Tool Form -->
-    <div class="card">
-        <h3>Add New Tool</h3>
-        <div class="form-group">
-            <label>Tool Name</label>
-            <input type="text" id="toolName" placeholder="e.g. Cordless Drill">
-        </div>
-        <div class="form-group">
-            <label>Category</label>
-            <select id="toolCategory">
-                <option value="Power Tools">Power Tools</option>
-                <option value="Hand Tools">Hand Tools</option>
-                <option value="Safety Gear">Safety Gear</option>
-                <option value="Ladders">Ladders</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Serial Number / ID</label>
-            <input type="text" id="toolSerial" placeholder="e.g. SN-12345">
-        </div>
-        <div class="form-group">
-            <label>Assigned To (Optional)</label>
-            <input type="text" id="toolUser" placeholder="e.g. John Doe">
-        </div>
-        <button onclick="addTool()">Add Tool</button>
-    </div>
-
-    <!-- Search -->
-    <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Search tools by name, ID, or user..." onkeyup="renderTable()">
-    </div>
-
-    <!-- Inventory Table -->
-    <div class="card">
-        <h3>Current Inventory</h3>
-        <table id="inventoryTable">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Serial</th>
-                    <th>Status</th>
-                    <th>Assigned To</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Rows will be inserted here by JS -->
-            </tbody>
-        </table>
-    </div>
+<div class="header">
+<h1>🛠 Inventory System</h1>
 </div>
 
-<script>
-    // Initialize Data
-    let inventory = JSON.parse(localStorage.getItem('toolInventory')) || [];
+<div class="stats">
+<div class="stat-box"><div class="stat-number" id="total-members">0</div>Members</div>
+<div class="stat-box"><div class="stat-number" id="total-tools">0</div>Tools</div>
+<div class="stat-box"><div class="stat-number" id="active-checkouts">0</div>Active Checkouts</div>
+</div>
 
-    // Save to LocalStorage
-    function saveData() {
-        localStorage.setItem('toolInventory', JSON.stringify(inventory));
-        updateStats();
-        renderTable();
-    }
+<div class="tabs">
+<button class="tab active" onclick="switchTab('members')">Members</button>
+<button class="tab" onclick="switchTab('tools')">Tools</button>
+<button class="tab" onclick="switchTab('checkouts')">Check-Outs</button>
+</div>
 
-    // Add Tool
-    function addTool() {
-        const name = document.getElementById('toolName').value;
-        const category = document.getElementById('toolCategory').value;
-        const serial = document.getElementById('toolSerial').value;
-        const user = document.getElementById('toolUser').value;
+<div id="members-section" class="card">
 
-        if (!name || !serial) {
-            alert("Please enter at least a Name and Serial Number.");
-            return;
-        }
+<h3>Add Member</h3>
 
-        const newTool = {
-            id: Date.now(), // Unique ID based on timestamp
-            name: name,
-            category: category,
-            serial: serial,
-            user: user || 'N/A',
-            status: user ? 'checked-out' : 'available',
-            dateAdded: new Date().toLocaleDateString()
-        };
+<input id="memberName" placeholder="Member name">
+<input id="memberRole" placeholder="Role">
 
-        inventory.push(newTool);
-        saveData();
-        
-        // Clear inputs
-        document.getElementById('toolName').value = '';
-        document.getElementById('toolSerial').value = '';
-        document.getElementById('toolUser').value = '';
-    }
+<button onclick="addMember()">Add Member</button>
 
-    // Toggle Status (Check In / Check Out)
-    function toggleStatus(id) {
-        const tool = inventory.find(t => t.id === id);
-        if (tool) {
-            if (tool.status === 'available') {
-                const user = prompt("Enter user name to check out:");
-                if (user) {
-                    tool.status = 'checked-out';
-                    tool.user = user;
-                }
-            } else {
-                tool.status = 'available';
-                tool.user = 'N/A';
-            }
-            saveData();
-        }
-    }
+<table id="membersTable">
+<thead>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Role</th>
+<th>Active</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
 
-    // Delete Tool
-    function deleteTool(id) {
-        if (confirm("Are you sure you want to delete this tool?")) {
-            inventory = inventory.filter(t => t.id !== id);
-            saveData();
-        }
-    }
+</div>
 
-    // Render Table
-    function renderTable() {
-        const tbody = document.querySelector('#inventoryTable tbody');
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        tbody.innerHTML = '';
 
-        inventory.forEach(tool => {
-            if (tool.name.toLowerCase().includes(search) || 
-                tool.serial.toLowerCase().includes(search) || 
-                tool.user.toLowerCase().includes(search)) {
-                
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${tool.id}</td>
-                    <td><strong>${tool.name}</strong></td>
-                    <td>${tool.category}</td>
-                    <td>${tool.serial}</td>
-                    <td><span class="status ${tool.status}">${tool.status.toUpperCase()}</span></td>
-                    <td>${tool.user}</td>
-                    <td>
-                        <button onclick="toggleStatus(${tool.id})">${tool.status === 'available' ? 'Check Out' : 'Check In'}</button>
-                        <button class="delete" onclick="deleteTool(${tool.id})">Delete</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            }
-        });
-    }
+<div id="tools-section" class="card hidden">
 
-    // Update Statistics
-    function updateStats() {
-        document.getElementById('total-tools').innerText = inventory.length;
-        document.getElementById('checked-out').innerText = inventory.filter(t => t.status === 'checked-out').length;
-        document.getElementById('available').innerText = inventory.filter(t => t.status === 'available').length;
-    }
+<h3>Add Tool</h3>
 
-    // Export to CSV
-    function exportToCSV() {
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "ID,Name,Category,Serial,Status,User,Date Added\n";
-        
-        inventory.forEach(row => {
-            csvContent += `${row.id},${row.name},${row.category},${row.serial},${row.status},${row.user},${row.dateAdded}\n`;
-        });
+<input id="toolName" placeholder="Tool name">
 
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "tool_inventory.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+<select id="toolCategory">
+<option>Power Tools</option>
+<option>Hand Tools</option>
+<option>Safety Gear</option>
+<option>Other</option>
+</select>
 
-    // Initial Load
-    renderTable();
-    updateStats();
+<input id="toolSerial" placeholder="Serial number">
+
+<button onclick="addTool()">Add Tool</button>
+
+<table id="toolsTable">
+
+<thead>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Category</th>
+<th>Serial</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+</div>
+
+
+<div id="checkouts-section" class="card hidden">
+
+<h3>Checkout Tool</h3>
+
+<select id="checkoutMember"></select>
+<select id="checkoutTool"></select>
+<input type="date" id="checkoutDate">
+
+<button onclick="checkoutTool()">Checkout</button>
+
+<table id="checkoutsTable">
+
+<thead>
+<tr>
+<th>Member</th>
+<th>Tool</th>
+<th>Serial</th>
+<th>Date</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+addDoc,
+deleteDoc,
+doc,
+updateDoc,
+onSnapshot
+}
+
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+const firebaseConfig = {
+apiKey: "AIzaSyBAPb33ULTdGg5OuQbpj-tAbB4J965DVoI",
+authDomain: "inventory-sysytem.firebaseapp.com",
+projectId: "inventory-sysytem",
+storageBucket: "inventory-sysytem.firebasestorage.app",
+messagingSenderId: "259162775372",
+appId: "1:259162775372:web:7d185f8f33434b6c9b39e9",
+measurementId: "G-KZ9BYSTKG2"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let members=[]
+let tools=[]
+let checkouts=[]
+
+
+window.switchTab=function(tab){
+
+document.getElementById("members-section").classList.add("hidden")
+document.getElementById("tools-section").classList.add("hidden")
+document.getElementById("checkouts-section").classList.add("hidden")
+
+document.getElementById(tab+"-section").classList.remove("hidden")
+
+}
+
+
+window.addMember=async function(){
+
+const name=document.getElementById("memberName").value
+const role=document.getElementById("memberRole").value
+
+await addDoc(collection(db,"members"),{
+
+name:name,
+role:role,
+activeCheckouts:0
+
+})
+
+}
+
+
+window.addTool=async function(){
+
+const name=document.getElementById("toolName").value
+const category=document.getElementById("toolCategory").value
+const serial=document.getElementById("toolSerial").value
+
+await addDoc(collection(db,"tools"),{
+
+name:name,
+category:category,
+serial:serial,
+status:"available"
+
+})
+
+}
+
+
+window.deleteMember=async function(id){
+
+await deleteDoc(doc(db,"members",id))
+
+}
+
+
+window.deleteTool=async function(id){
+
+await deleteDoc(doc(db,"tools",id))
+
+}
+
+
+window.checkoutTool=async function(){
+
+const memberId=document.getElementById("checkoutMember").value
+const toolId=document.getElementById("checkoutTool").value
+const date=document.getElementById("checkoutDate").value
+
+const member=members.find(m=>m.id==memberId)
+const tool=tools.find(t=>t.id==toolId)
+
+await addDoc(collection(db,"checkouts"),{
+
+memberId,
+memberName:member.name,
+toolId,
+toolName:tool.name,
+serial:tool.serial,
+date
+
+})
+
+await updateDoc(doc(db,"tools",toolId),{status:"checked-out"})
+await updateDoc(doc(db,"members",memberId),{activeCheckouts:member.activeCheckouts+1})
+
+}
+
+
+window.returnTool=async function(id){
+
+const checkout=checkouts.find(c=>c.id==id)
+
+await deleteDoc(doc(db,"checkouts",id))
+
+await updateDoc(doc(db,"tools",checkout.toolId),{status:"available"})
+
+const member=members.find(m=>m.id==checkout.memberId)
+
+await updateDoc(doc(db,"members",checkout.memberId),{activeCheckouts:member.activeCheckouts-1})
+
+}
+
+
+onSnapshot(collection(db,"members"),snap=>{
+
+members=[]
+snap.forEach(d=>members.push({id:d.id,...d.data()}))
+
+renderMembers()
+renderDropdowns()
+updateStats()
+
+})
+
+
+onSnapshot(collection(db,"tools"),snap=>{
+
+tools=[]
+snap.forEach(d=>tools.push({id:d.id,...d.data()}))
+
+renderTools()
+renderDropdowns()
+updateStats()
+
+})
+
+
+onSnapshot(collection(db,"checkouts"),snap=>{
+
+checkouts=[]
+snap.forEach(d=>checkouts.push({id:d.id,...d.data()}))
+
+renderCheckouts()
+updateStats()
+
+})
+
+
+function renderMembers(){
+
+const tbody=document.querySelector("#membersTable tbody")
+tbody.innerHTML=""
+
+members.forEach(m=>{
+
+const tr=document.createElement("tr")
+
+tr.innerHTML=`
+<td>${m.id}</td>
+<td>${m.name}</td>
+<td>${m.role}</td>
+<td>${m.activeCheckouts}</td>
+<td><button class="danger" onclick="deleteMember('${m.id}')">Delete</button></td>
+`
+
+tbody.appendChild(tr)
+
+})
+
+}
+
+
+function renderTools(){
+
+const tbody=document.querySelector("#toolsTable tbody")
+tbody.innerHTML=""
+
+tools.forEach(t=>{
+
+const tr=document.createElement("tr")
+
+tr.innerHTML=`
+<td>${t.id}</td>
+<td>${t.name}</td>
+<td>${t.category}</td>
+<td>${t.serial}</td>
+<td>${t.status}</td>
+<td><button class="danger" onclick="deleteTool('${t.id}')">Delete</button></td>
+`
+
+tbody.appendChild(tr)
+
+})
+
+}
+
+
+function renderCheckouts(){
+
+const tbody=document.querySelector("#checkoutsTable tbody")
+tbody.innerHTML=""
+
+checkouts.forEach(c=>{
+
+const tr=document.createElement("tr")
+
+tr.innerHTML=`
+<td>${c.memberName}</td>
+<td>${c.toolName}</td>
+<td>${c.serial}</td>
+<td>${c.date}</td>
+<td><button class="secondary" onclick="returnTool('${c.id}')">Return</button></td>
+`
+
+tbody.appendChild(tr)
+
+})
+
+}
+
+
+function renderDropdowns(){
+
+const memberSel=document.getElementById("checkoutMember")
+const toolSel=document.getElementById("checkoutTool")
+
+memberSel.innerHTML='<option>Select Member</option>'
+toolSel.innerHTML='<option>Select Tool</option>'
+
+members.forEach(m=>memberSel.innerHTML+=`<option value="${m.id}">${m.name}</option>`)
+
+tools.forEach(t=>{
+
+if(t.status==="available")
+toolSel.innerHTML+=`<option value="${t.id}">${t.name}</option>`
+
+})
+
+}
+
+
+function updateStats(){
+
+document.getElementById("total-members").innerText=members.length
+document.getElementById("total-tools").innerText=tools.length
+document.getElementById("active-checkouts").innerText=checkouts.length
+
+}
+
 </script>
 
 </body>
